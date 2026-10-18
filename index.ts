@@ -86,6 +86,7 @@ let config: PowerlineConfig = {
   segmentOptions: {},
   placement: "above",
   invalidPlacement: null,
+  padding: 1,
   secondaryOverflow: "drop",
   invalidSecondaryOverflow: null,
   welcome: true,
@@ -1106,7 +1107,8 @@ function buildContentFromParts(
   const separatorDef = getSeparator(separatorStyle);
   const sepAnsi = getFgAnsiCode("sep");
   const sep = separatorDef.left;
-  return " " + parts.join(` ${sepAnsi}${sep}${ansi.reset} `) + ansi.reset + " ";
+  const padding = " ".repeat(config.padding);
+  return padding + parts.join(` ${sepAnsi}${sep}${ansi.reset} `) + ansi.reset + padding;
 }
 
 type ResponsiveLayout = { topContent: string; secondaryLines: string[] };
@@ -1141,8 +1143,8 @@ function computeResponsiveLayout(
   }
 
   // Calculate how many segments fit in top bar
-  // Account for: leading space (1) + trailing space (1) = 2 chars overhead
-  const baseOverhead = 2;
+  // Reserve the configured outer padding on both edges of every row.
+  const baseOverhead = 2 * config.padding;
   let currentWidth = baseOverhead;
   let topSegments: string[] = [];
   let overflowSegments: { content: string; width: number }[] = [];

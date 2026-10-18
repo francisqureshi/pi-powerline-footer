@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- **Configurable outer bar padding** — Set `powerline.padding` to an integer from `0` to `8`; `0` makes primary and secondary rows flush-left, including wrapped rows. The default and invalid-value fallback are `1`, preserving existing spacing. Thanks to [Francis Qureshi (@francisqureshi)](https://github.com/francisqureshi) for the request. Available in the fork via `pi install git:github.com/francisqureshi/pi-powerline-footer`, not the upstream npm package.
+
 ## [0.20.2] - 2026-10-16
 
 ### Highlights

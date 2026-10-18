@@ -42,10 +42,10 @@ Customizes the default [pi](https://github.com/badlogic/pi-mono) editor with a p
 ## Installation
 
 ```bash
-pi install npm:pi-powerline-footer
+pi install git:github.com/francisqureshi/pi-powerline-footer
 ```
 
-Restart pi to activate.
+This fork includes configurable outer bar padding; install it from Git rather than the upstream npm package. Restart pi to activate.
 
 ## Usage
 
@@ -200,6 +200,18 @@ Use `powerline.layout` to override segment order and grouping while keeping the 
 A present `left`, `right`, or `secondary` array replaces that preset group exactly; an empty array clears it. Omitted groups keep the preset entries and automatically append custom items by their configured `position`. Explicitly listing a segment moves it out of omitted preset groups, and explicitly placed custom items are not auto-appended elsewhere. `disabledSegments` is applied after layout. `separator` accepts any style listed below; omit it to keep the preset’s separator.
 
 Responsive behavior is unchanged: these groups control ordering and overflow priority, not permanently pinned terminal rows. `right` means “later primary segments,” not right-edge alignment. On wide terminals secondary entries can fit in the top bar; on narrow terminals primary overflow moves into the secondary line. Some segments are hidden when they have no value, so `thinking` appears only when the active session/model reports a non-`off` thinking level. Unknown entries are ignored with a startup warning. The old fixed `custom` preset has been removed; combine any preset with `layout` instead.
+
+Set `powerline.padding` to an integer from `0` to `8` to control the outer spaces on each edge of every primary and secondary bar row (including wrapped rows). The default is `1`, preserving the existing layout; malformed or out-of-range values fall back to `1`. Use `0` for a flush-left bar:
+
+```json
+{
+  "powerline": {
+    "padding": 0
+  }
+}
+```
+
+Padding does not change segment-internal spacing, separators, or editor, transcript, and queue-preview spacing. String preset shorthand keeps the default padding of `1`.
 
 By default, segments that don't fit on the secondary line are dropped. Set `"secondaryOverflow": "wrap"` in `powerline` to continue them on extra lines below instead. A single segment wider than the terminal is still hidden. The default is `"drop"`.
 

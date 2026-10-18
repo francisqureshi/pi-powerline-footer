@@ -11,6 +11,7 @@ import childProcess from "node:child_process";
 import type { ReadonlyFooterDataProvider } from "@earendil-works/pi-coding-agent";
 import { waitForGitUpdates } from "../git-status.ts";
 import { NERD_ICONS } from "../icons.ts";
+import { visibleWidth } from "@earendil-works/pi-tui";
 
 const source = readFileSync(new URL("../index.ts", import.meta.url), "utf-8");
 
@@ -317,6 +318,64 @@ test("secondary overflow drops the row tail by default and wraps it onto extra r
     "wrap keeps order, continues on new rows, and skips a segment too wide for any row",
   );
   assert.deepEqual(await renderSecondaryOverflowFooter("wrap", 200), [], "no overflow renders no footer rows");
+});
+
+test("outer padding applies to responsive primary and wrapped rows with ANSI and Unicode widths", async () => {
+  const render = async (padding: number | undefined) => {
+    const root = mkdtempSync(join(tmpdir(), "powerline-padding-"));
+    const statuses = new Map([["a", "\x1b[31m界é\x1b[0m"], ["b", "bbb"], ["c", "ccc"]]);
+    writeFileSync(join(root, "settings.json"), JSON.stringify({
+      powerline: {
+        welcome: false, padding, secondaryOverflow: "wrap", separator: "pipe",
+        layout: { left: ["custom:a"], right: ["custom:b"], secondary: ["custom:c"] },
+        customItems: [...statuses.keys()].map((id) => ({ id, selfColorize: true })),
+      },
+    }));
+    const footerData: ReadonlyFooterDataProvider = {
+      getGitBranch: () => null,
+      getExtensionStatuses: () => statuses,
+      getAvailableProviderCount: () => 0,
+      onBranchChange: () => () => {},
+    };
+    const { extension, restoreEnv } = await loadPowerline(root);
+    const fake = createFakePi();
+    const runtime = createCtx({ cwd: root, footerData });
+    try {
+      extension(fake.pi);
+      await fake.handlers.get("session_start")?.({ reason: "resume" }, runtime.ctx);
+      return Array.from({ length: 41 }, (_, width) => ({
+        primary: runtime.widgets.get("powerline-top")!.render(width),
+        secondary: runtime.footer!.render(width),
+      }));
+    } finally {
+      await fake.handlers.get("session_shutdown")?.({}, runtime.ctx);
+      restoreEnv();
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  };
+  const plain = (rows: string[]) => rows.map((row) => row.replace(/\x1b\[[0-9;]*m/g, ""));
+  const defaults = await render(undefined);
+  assert.deepEqual(await render(1), defaults, "explicit one preserves default bytes and layout");
+  assert.deepEqual(plain(defaults[40]!.primary), [" 界é | bbb | ccc "]);
+  for (const padding of [0, 2, 8]) {
+    const layouts = await render(padding);
+    for (const [width, layout] of layouts.entries()) {
+      for (const row of [...layout.primary, ...layout.secondary]) {
+        assert.ok(visibleWidth(row) <= width, `padding ${padding}, width ${width}`);
+        const text = plain([row])[0]!;
+        assert.equal(text.length - text.trimStart().length, padding);
+        assert.equal(text.length - text.trimEnd().length, padding);
+      }
+    }
+    const exact = layouts[3 + 2 * padding]!;
+    assert.deepEqual(plain(exact.primary), [" ".repeat(padding) + "界é" + " ".repeat(padding)]);
+    assert.deepEqual(plain(exact.secondary), ["bbb", "ccc"].map((s) => " ".repeat(padding) + s + " ".repeat(padding)));
+    assert.deepEqual(layouts[2 + 2 * padding], { primary: [], secondary: [] });
+    if (padding === 0) {
+      assert.deepEqual(plain(layouts[9]!.primary), ["界é | bbb"], "zero padding recovers both edge cells");
+      assert.deepEqual(plain(defaults[9]!.primary), [" 界é "]);
+    }
+  }
 });
 
 test("web frontends outside the TUI receive only the primary bar widget", async () => {
