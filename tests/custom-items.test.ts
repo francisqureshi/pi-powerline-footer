@@ -181,6 +181,18 @@ test("parsePowerlineConfig validates primary powerline placement", () => {
   assert.equal(invalid.invalidPlacement, "sideways");
 });
 
+test("parsePowerlineConfig validates outer padding without coercion", () => {
+  for (const padding of [0, 1, 2, 8]) {
+    assert.equal(parsePowerlineConfig({ padding }, ["default"]).padding, padding);
+  }
+  for (const padding of [undefined, null, -1, 9, 1.5, NaN, Infinity, -Infinity, "0", true, [], {}]) {
+    assert.equal(parsePowerlineConfig({ padding }, ["default"]).padding, 1);
+  }
+  for (const value of [undefined, null, {}, "compact"]) {
+    assert.equal(parsePowerlineConfig(value, ["default", "compact"]).padding, 1);
+  }
+});
+
 test("parsePowerlineConfig validates secondary overflow mode", () => {
   const unset = parsePowerlineConfig({}, ["default"]);
   const wrap = parsePowerlineConfig({ secondaryOverflow: " Wrap " }, ["default"]);

@@ -17,6 +17,7 @@ export interface PowerlineConfig {
   segmentOptions: StatusLineSegmentOptions;
   placement: PowerlinePlacement;
   invalidPlacement: string | null;
+  padding: number;
   secondaryOverflow: SecondaryOverflow;
   invalidSecondaryOverflow: string | null;
   welcome: boolean;
@@ -334,6 +335,7 @@ export function parsePowerlineConfig(value: unknown, presets: readonly StatusLin
     segmentOptions: {},
     placement: "above",
     invalidPlacement: null,
+    padding: 1,
     secondaryOverflow: "drop",
     invalidSecondaryOverflow: null,
     welcome: true,
@@ -366,6 +368,9 @@ export function parsePowerlineConfig(value: unknown, presets: readonly StatusLin
     segmentOptions: normalizeSegmentOptions(value),
     placement,
     invalidPlacement,
+    padding: typeof value.padding === "number" && Number.isInteger(value.padding) && value.padding >= 0 && value.padding <= 8
+      ? value.padding
+      : defaultConfig.padding,
     secondaryOverflow,
     invalidSecondaryOverflow,
     welcome: value.welcome !== false,
